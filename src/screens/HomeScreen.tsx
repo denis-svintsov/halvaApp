@@ -8,14 +8,42 @@ import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
 import { FONT_FAMILY } from '../../customFont';
 import LinearGradient from 'react-native-linear-gradient';
+import PurchaseDetailsModal, { Purchase } from '../components/PurchaseDetailModal';
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
+
+  const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
+
 
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [fadeAnim] = useState(new Animated.Value(0)); // Анимация затемнения фона
   const [translateY] = useState(new Animated.Value(300)); // Анимация появления модалки снизу
+
+  const formatDate = (isoString: string) => {
+    const date = new Date(isoString);
+    const now = new Date();
+
+    const months = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    if (year === now.getFullYear()) {
+      return `${day} ${month} в ${hours}:${minutes}`;
+    } else {
+      return `${day} ${month} ${year} в ${hours}:${minutes}`;
+    }
+  };
+
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true, // Это позволит сразу обрабатывать свайпы
@@ -45,7 +73,7 @@ const HomeScreen = () => {
     translateY.setValue(300);
     fadeAnim.setValue(0);
     setModalVisible(true);
-  
+
     setTimeout(() => {
       Animated.parallel([
         Animated.spring(translateY, {
@@ -62,7 +90,7 @@ const HomeScreen = () => {
       ]).start();
     }, 50); // Даем 50ms, чтобы Modal успел стать видимым
   };
-  
+
 
   const closeModal = () => {
     Animated.parallel([
@@ -83,18 +111,23 @@ const HomeScreen = () => {
   };
 
   const purchases = [
-    { id: 1, shop: 'Магнит', time: 'Сегодня, 12:30', amount: '450₽', idShop: 1 },
-    { id: 2, shop: 'Пятёрочка', time: 'Вчера, 18:00', amount: '320₽', idShop: 2 },
-    { id: 3, shop: 'OZON', time: '12 апр, 10:15', amount: '1 200₽', idShop: 3 },
+    { id: 1, time: '2025-04-26T18:01', amount: '450', idShop: 1 },
+    { id: 2, time: '2025-04-26T18:01', amount: '320', idShop: 2 },
+    { id: 3, time: '2025-04-26T18:01', amount: '1 200', idShop: 3 },
   ];
 
-  const shopIcons: { [key: number]: any } = {
-    1: require('../assets/icons/magnit.png'),
-    2: require('../assets/icons/pyatyorochka.png'),
-    3: require('../assets/icons/ozon.png'),
+  const shopIcons: { [key: number]: { icon: any; name: string } } = {
+    1: { icon: require('../assets/icons/magnit.png'), name: 'Магнит' },
+    2: { icon: require('../assets/icons/pyatyorochka.png'), name: 'Пятёрочка' },
+    3: { icon: require('../assets/icons/ozon.png'), name: 'OZON' },
   };
 
   const categories = ['Продукты', 'Одежда', 'Техника', 'Дом', 'Спорт'];
+
+  const categoriesIcons: { [key: string]: any } = {
+    'Продукты': require('../assets/categories/products.png'),
+    'Одежда': require('../assets/categories/clothes.png'),
+  };
 
   const selectImage = () => {
     launchImageLibrary({ mediaType: 'photo', includeBase64: false }, (response) => {
@@ -181,7 +214,9 @@ const HomeScreen = () => {
         end={{ x: 1, y: 1 }}
         style={styles.header}>
         <View style={styles.userInfo}>
-          <Image source={require('../assets/icons/bogdan.jpg')} style={styles.logo} />
+          <TouchableOpacity onPress={() => navigation.navigate('Admin')}>
+            <Image source={require('../assets/icons/bogdan.jpg')} style={styles.logo} />
+          </TouchableOpacity>
           <Text style={styles.username}>Богдан</Text>
         </View>
         <View style={styles.qrBox}>
@@ -205,25 +240,34 @@ const HomeScreen = () => {
           </View>
 
           <View>
-            {purchases.map((item, index) => (
-              <View key={item.id}>
-                <View style={styles.purchaseCard}>
-                  {/* Используем idShop для загрузки иконки */}
-                  <Image
-                    source={shopIcons[item.idShop] || require('../assets/icons/default.png')}  // fallback на дефолтную иконку
-                    style={styles.purchaseIcon}
-                  />
-                  <View style={styles.purchaseInfo}>
-                    <Text style={styles.purchaseShop}>{item.shop}</Text>
-                    <Text style={styles.purchaseTime}>{item.time}</Text>
-                  </View>
-                  <Text style={styles.purchaseAmount}>{item.amount}</Text>
-                </View>
+            {purchases.map((item, index) => {
+              const shop = shopIcons[item.idShop];
 
-                {/* Убираем разделитель у последнего элемента */}
-                {index !== purchases.length - 1 && <View style={styles.purchaseSeparator} />}
-              </View>
-            ))}
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => {
+                    setSelectedPurchase(item); // Сохраняем выбранную покупку
+                    setPurchaseModalVisible(true); // Открываем модалку
+                  }}
+                >
+                  <View style={styles.purchaseCard}>
+                    <Image
+                      source={shop?.icon || require('../assets/icons/default.png')}
+                      style={styles.purchaseIcon}
+                    />
+                    <View style={styles.purchaseInfo}>
+                      <Text style={styles.purchaseShop}>{shop?.name || 'Неизвестно'}</Text>
+                      <Text style={styles.purchaseTime}>{formatDate(item.time)}</Text>
+                    </View>
+                    <Text style={styles.purchaseAmount}>{item.amount}₽</Text>
+                  </View>
+
+                  {index !== purchases.length - 1 && <View style={styles.purchaseSeparator} />}
+                </TouchableOpacity>
+              );
+            })}
+
           </View>
 
 
@@ -238,10 +282,38 @@ const HomeScreen = () => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
             {categories.map((cat, idx) => (
               <View key={idx} style={styles.categoryBox}>
-                <Text>{cat}</Text>
+                <View style={{ position: 'relative' }}>
+                  <Image
+                    source={categoriesIcons[cat] || require('../assets/categories/default.png')}  // fallback на дефолтную иконку
+                    style={styles.categoriesIcon}
+                  />
+                  <Text style={styles.categoriesTextOverlay}>{cat}</Text>
+                </View>
               </View>
             ))}
           </ScrollView>
+
+        </View>
+
+        {/* Акции */}
+        <View style={styles.section}>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Акции</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+            {categories.map((cat, idx) => (
+              <View key={idx} style={styles.categoryBox}>
+                <View style={{ position: 'relative' }}>
+                  <Image
+                    source={categoriesIcons[cat] || require('../assets/categories/default.png')}  // fallback на дефолтную иконку
+                    style={styles.categoriesIcon}
+                  />
+                  <Text style={styles.categoriesTextOverlay}>{cat}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+
         </View>
       </View>
 
@@ -282,6 +354,12 @@ const HomeScreen = () => {
           </Animated.View>
         </View>
       </Modal>
+
+      <PurchaseDetailsModal
+        purchaseModalVisible={purchaseModalVisible}
+        setPurchaseModalVisible={setPurchaseModalVisible}
+        selectedPurchase={selectedPurchase}
+      />
 
     </ScrollView>
   );
@@ -345,6 +423,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
+    elevation: 3,
   },
   sectionContainer: {
     flexDirection: 'row',
@@ -405,17 +484,34 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   categoryBox: {
+    width: 120,
+    height: 120,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
+    // paddingVertical: 12,
+    // paddingHorizontal: 20,
+    borderRadius: 30,
+    marginRight: 15,
+    // borderWidth: 4,
+    // borderColor: 'rgba(0, 0, 0, 0.04)',
+  },
+  categoriesIcon: {
+    width: '100%',
+    height: undefined, // обязательно убрать фиксированную высоту!
+    aspectRatio: 1,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 30,
+    resizeMode: 'contain',
+  },
+  categoriesTextOverlay: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    color: '#777', // чтобы текст был виден на картинке
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 16,
+    fontFamily: FONT_FAMILY.PODKOVA_REGULAR,
   },
   icon: {
     width: 28,
@@ -482,6 +578,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
     textAlign: 'center',
+  },
+  detailText: {
+    fontSize: 16,
+    marginVertical: 5,
   },
 });
 

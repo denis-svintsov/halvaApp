@@ -17,7 +17,8 @@ const App = () => {
       >
         <Stack.Screen name="Home" component={HomeScreen} /> 
         <Stack.Screen name="QrScreen" component={QrScreen} />
-        <Stack.Screen name="AllPurchases" component={HomeScreen} />
+        <Stack.Screen name="AllPurchases" component={AllPurchases} />
+        <Stack.Screen name="Admin" component={AllPurchases} />
       </Stack.Navigator>
     </NavigationContainer>
   );
