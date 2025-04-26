@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
 import { FONT_FAMILY } from '../../customFont';
+import LinearGradient from 'react-native-linear-gradient';
 
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
@@ -45,11 +46,11 @@ const HomeScreen = () => {
     setModalVisible(true);
 
     Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: 0,  // Модалка должна подняться
-        duration: 300,
-        easing: Easing.out(Easing.ease),
+      Animated.spring(translateY, {
+        toValue: 0,
         useNativeDriver: true,
+        friction: 8,
+        tension: 70,
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,  // Делаем фон полупрозрачным
@@ -164,7 +165,11 @@ const HomeScreen = () => {
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#2A2F4F', '#2A2F4F']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}>
         <View style={styles.userInfo}>
           <Image source={require('../assets/icons/bogdan.jpg')} style={styles.logo} />
           <Text style={styles.username}>Алексей</Text>
@@ -174,51 +179,53 @@ const HomeScreen = () => {
             <Image source={require('../assets/icons/qr-code-white.png')} style={styles.icon} />
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
-      {/* Траты */}
-      <View style={styles.section}>
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Траты</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('AllPurchases')}
-            style={styles.moreButton}
-          >
-            <Text style={styles.moreButtonText}>Ещё</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View>
-          {purchases.map((item) => (
-            <View key={item.id}>
-            <View style={styles.purchaseCard}>
-              <Image source={require('../assets/icons/magnit.png')} style={styles.purchaseIcon} />
-              <View style={styles.purchaseInfo}>
-                <Text style={styles.purchaseShop}>{item.shop}</Text>
-                <Text style={styles.purchaseTime}>{item.time}</Text>
-              </View>
-              <Text style={styles.purchaseAmount}>{item.amount}</Text>
-            </View>
-      
-            {/* Линия под карточкой */}
-            <View style={styles.purchaseSeparator} />
+      <View style={styles.content}>
+        {/* Траты */}
+        <View style={styles.section}>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Траты</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('AllPurchases')}
+              // style={styles.moreButton}
+            >
+              <Text style={styles.moreButtonText}>Ещё</Text>
+            </TouchableOpacity>
           </View>
-          ))}
-        </View>
-      </View>
 
-      {/* Категории */}
-      <View style={styles.section}>
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Категории</Text>
+          <View>
+            {purchases.map((item) => (
+              <View key={item.id}>
+                <View style={styles.purchaseCard}>
+                  <Image source={require('../assets/icons/magnit.png')} style={styles.purchaseIcon} />
+                  <View style={styles.purchaseInfo}>
+                    <Text style={styles.purchaseShop}>{item.shop}</Text>
+                    <Text style={styles.purchaseTime}>{item.time}</Text>
+                  </View>
+                  <Text style={styles.purchaseAmount}>{item.amount}</Text>
+                </View>
+
+                {/* Линия под карточкой */}
+                <View style={styles.purchaseSeparator} />
+              </View>
+            ))}
+          </View>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {categories.map((cat, idx) => (
-            <View key={idx} style={styles.categoryBox}>
-              <Text>{cat}</Text>
-            </View>
-          ))}
-        </ScrollView>
+
+        {/* Категории */}
+        <View style={styles.section}>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Категории</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+            {categories.map((cat, idx) => (
+              <View key={idx} style={styles.categoryBox}>
+                <Text>{cat}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
       {/* Модальное окно */}
@@ -265,186 +272,204 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: '#fff',        // белый фон
-    borderRadius: 12,               // скругление углов
-    padding: 16,                    // внутренние отступы
-    marginBottom: 30,               // внешний отступ снизу
-    shadowColor: '#000',            // цвет тени
-    shadowOffset: { width: 0, height: 4 }, // сдвиг тени
-    shadowOpacity: 0.1,             // прозрачность тени
-    shadowRadius: 6,                // размытие тени
-    elevation: 6,                   // тень для Android
-  },  
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#2A2F4F',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 242, 242, 0.8)',
+  },
+  content: {
+    paddingHorizontal: 16,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
-    paddingHorizontal: 16,
-    paddingTop: 50,
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: '#2A2F4F',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: 'hidden',
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   username: {
-    marginLeft: 10,
-    fontSize: 22,
-    // fontWeight: '600',
-    fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
+    marginLeft: 16,
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
+    letterSpacing: 0.5,
   },
   qrBox: {
-    backgroundColor: '#ff4e50',
-    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 16,
+    shadowColor: '#FFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  sectionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  moreButtonText: {
+    color: '#2A2F4F',
+    fontSize: 16,
+    fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
+    letterSpacing: 0.3,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    color: '#2A2F4F',
+    fontFamily: FONT_FAMILY.Montserrat_BOLD,
+    letterSpacing: 0.5,
+  },
+  purchaseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  purchaseIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+  },
+  purchaseInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  purchaseShop: {
+    fontSize: 16,
+    color: '#2A2F4F',
+    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
+  },
+  purchaseTime: {
+    fontSize: 13,
+    color: '#6C757D',
+    fontFamily: FONT_FAMILY.Montserrat_LIGHT,
+  },
+  purchaseAmount: {
+    fontSize: 16,
+    color: '#2A2F4F',
+    fontFamily: FONT_FAMILY.Montserrat_BOLD,
+  },
+  purchaseSeparator: {
+    height: 1,
+    backgroundColor: 'rgba(108, 117, 125, 0.1)',
+    marginVertical: 8,
+    marginHorizontal: 40
+  },
+  categoryScroll: {
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  categoryBox: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 242, 242, 0.8)',
+    shadowColor: '#2A2F4F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  icon: {
+    width: 32,
+    height: 32,
+    tintColor: '#FFFFFF',
+  },
+  logo: {
+    width: 64,
+    height: 64,
     borderRadius: 20,
-    shadowColor: '#000',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(42, 47, 79, 0.6)',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingBottom: 40,
+  },
+  dragBar: {
+    width: 64,
+    height: 5,
+    backgroundColor: '#E9ECEF',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 24,
+    color: '#2A2F4F',
+    fontFamily: FONT_FAMILY.Montserrat_BOLD,
+    marginBottom: 24,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  image: {
+    width: 240,
+    height: 240,
+    borderRadius: 16,
+    alignSelf: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+  },
+  noImageText: {
+    fontSize: 16,
+    color: '#ADB5BD',
+    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  button: {
+    marginTop: 12,
+    backgroundColor: '#2A2F4F',
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: '#2A2F4F',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
   },
-  sectionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // Распределение по ширине
-    marginBottom: 12,
-  },
-  moreButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    // fontWeight: 'bold',
-    fontFamily: FONT_FAMILY.Montserrat_BOLD,
-    marginLeft: 10,
-  },
-  purchaseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    position: 'relative', // не обязательно, но вдруг пригодится
-  },
-  purchaseIcon: {
-    width: 30,
-    height: 30,
-  },
-  purchaseInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  purchaseShop: {
-    fontSize: 16,
-    // fontWeight: '600',
-    fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
-  },
-  purchaseTime: {
-    fontSize: 12,
-    color: '#777',
-    fontFamily: FONT_FAMILY.Montserrat_LIGHT,
-  },
-  purchaseAmount: {
-    // fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: FONT_FAMILY.Montserrat_BOLD,
-  },
-  purchaseSeparator: {
-    height: 1,
-    backgroundColor: '#ccc',
-    marginTop: 8,
-    marginHorizontal: 35  // регулируешь отступы слева и справа
-  },
-  moreButton: {
-    backgroundColor: '#ff4e50', // Цвет кнопки
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-  },
-  categoryScroll: {
-    marginBottom: 24,
-    paddingVertical: 4,
-  },
-  categoryBox: {
-    backgroundColor: '#FEFEFE',
-    padding: 16,
-    borderRadius: 12,
-    marginRight: 12,
-    minWidth: 100,
-    alignItems: 'center',
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: 'contain',
-    borderRadius: 20,
-    padding: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  dragBar: {
-    width: 50,
-    height: 5,
-    backgroundColor: '#ccc',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  image: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  noImageText: {
-    fontSize: 16,
-    color: '#777',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  button: {
-    marginTop: 10,
-    backgroundColor: '#ff4e50',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-  },
   buttonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
-    textAlign: 'center',
+    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
+    letterSpacing: 0.3,
   },
 });
 
