@@ -15,9 +15,9 @@ const App = () => {
           headerShown: false, // убираем заголовок сверху
         }}
       >
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} /> 
         <Stack.Screen name="QrScreen" component={QrScreen} />
-        <Stack.Screen name="AllPurchases" component={AllPurchases} />
+        <Stack.Screen name="AllPurchases" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

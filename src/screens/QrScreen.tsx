@@ -1,143 +1,154 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Alert, Image, TouchableOpacity, PermissionsAndroid, Platform } from 'react-native';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import axios from 'axios';
 
-const QrScreen = () => {
-  const navigation = useNavigation<any>();
+const QrScreen = ({ navigation }: any) => {
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const purchases = [
-    { id: 1, shop: 'Магнит', time: 'Сегодня, 12:30', amount: '450₽' },
-    { id: 2, shop: 'Пятёрочка', time: 'Вчера, 18:00', amount: '320₽' },
-    { id: 3, shop: 'OZON', time: '12 апр, 10:15', amount: '1 200₽' },
-  ];
+  const selectImage = () => {
+    // Показываем меню выбора: камера или галерея
+    launchImageLibrary({ mediaType: 'photo', includeBase64: false }, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorCode);
+      } else {
+        // Проверяем, что URI существует, и устанавливаем его или null
+        const uri = response.assets?.[0]?.uri ?? null;
+        setImageUri(uri); // Сохраняем URI изображения или null
+      }
+    });
+  };
 
-  const categories = ['Продукты', 'Одежда', 'Техника', 'Дом', 'Спорт'];
+  const takePhoto = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Разрешение на использование камеры',
+          message: 'Приложению нужно разрешение на использование камеры для съемки фото.',
+          buttonNeutral: 'Спросить позже',
+          buttonNegative: 'Отказать',
+          buttonPositive: 'Разрешить',
+        },
+      );
+  
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert('Ошибка', 'Вы не дали разрешение на использование камеры.');
+        return;
+      }
+    }
+  
+    launchCamera({ mediaType: 'photo', includeBase64: false }, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorCode);
+      } else {
+        const uri = response.assets?.[0]?.uri ?? null;
+        setImageUri(uri);
+      }
+    });
+  };
+  
+
+  const uploadImage = async () => {
+    if (!imageUri) {
+      Alert.alert('Ошибка', 'Пожалуйста, выберите изображение!');
+      return;
+    }
+  
+    const formData = new FormData();
+    const image = {
+      uri: imageUri,
+      type: 'image/jpeg', // можно динамически определять тип, если нужно
+      name: 'photo.jpg',
+    };
+  
+    // Кладем файл
+    formData.append('file', image);
+  
+    // Кладем userId
+    formData.append('userId', '1'); // Важно: строкой, FormData ожидает текст
+  
+    try {
+      const response = await axios.post('http://109.195.28.204/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      Alert.alert('Успех', 'Изображение успешно отправлено!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    } catch (error) {
+      console.log('Ошибка при отправке:', error);
+      Alert.alert('Ошибка', 'Не удалось отправить изображение. Попробуйте снова.');
+    }
+  };
+  
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          {/* <Image source={require('../assets/icons/user.png')} style={styles.icon} /> */}
-          <Text style={styles.username}>Алексей</Text>
-        </View>
-        <TouchableOpacity style={styles.qrBox} onPress={() => navigation.navigate('QrScreen')}>
-          {/* <Image source={require('../assets/icons/qr.png')} style={styles.icon} /> */}
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <Text style={styles.title}>Загрузите фото</Text>
+      
+      {/* Показ изображения, если оно выбрано */}
+      {imageUri ? (
+        <Image source={{ uri: imageUri }} style={styles.image} />
+      ) : (
+        <Text style={styles.noImageText}>Нет выбранного изображения</Text>
+      )}
 
-      {/* Траты */}
-      <Text style={styles.sectionTitle}>Траты</Text>
-      <View>
-        {purchases.map((item) => (
-          <View key={item.id} style={styles.purchaseCard}>
-            {/* <Image source={require('../assets/icons/shop.png')} style={styles.icon} /> */}
-            <View style={styles.purchaseInfo}>
-              <Text style={styles.purchaseShop}>{item.shop}</Text>
-              <Text style={styles.purchaseTime}>{item.time}</Text>
-            </View>
-            <Text style={styles.purchaseAmount}>{item.amount}</Text>
-          </View>
-        ))}
-        <TouchableOpacity onPress={() => navigation.navigate('AllPurchases')}>
-          <Text style={styles.moreButton}>Ещё →</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Категории */}
-      <Text style={styles.sectionTitle}>Категории</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-        {categories.map((cat, idx) => (
-          <View key={idx} style={styles.categoryBox}>
-            <Text>{cat}</Text>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Акции */}
-      <Text style={styles.sectionTitle}>Акции</Text>
-    </ScrollView>
+      {/* Кнопки для выбора изображения */}
+      <TouchableOpacity style={styles.button} onPress={selectImage}>
+        <Text style={styles.buttonText}>Выбрать из галереи</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={takePhoto}>
+        <Text style={styles.buttonText}>Сделать фото</Text>
+      </TouchableOpacity>
+      
+      {/* Кнопка для отправки изображения */}
+      <TouchableOpacity style={styles.button} onPress={uploadImage}>
+        <Text style={styles.buttonText}>Отправить</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
-
-export default QrScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F9',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  username: {
-    marginLeft: 8,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  qrBox: {
-    backgroundColor: '#EFEFEF',
-    padding: 10,
-    borderRadius: 10,
-  },
-  sectionTitle: {
-    fontSize: 20,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  purchaseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEFEFE',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  purchaseInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  purchaseShop: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  purchaseTime: {
-    fontSize: 12,
-    color: '#777',
-  },
-  purchaseAmount: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  moreButton: {
-    color: '#007AFF',
-    fontSize: 16,
-    marginTop: 6,
-    textAlign: 'right',
-  },
-  categoryScroll: {
-    marginBottom: 24,
-  },
-  categoryBox: {
-    backgroundColor: '#FEFEFE',
-    padding: 16,
-    borderRadius: 12,
-    marginRight: 12,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  icon: {
-    width: 30,
-    height: 30,
+  image: {
+    width: 200,
+    height: 200,
     resizeMode: 'contain',
+    marginBottom: 20,
+  },
+  noImageText: {
+    fontSize: 16,
+    color: '#777',
+    marginBottom: 20,
+  },
+  button: {
+    marginTop: 10,
+    backgroundColor: '#ff4e50',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
+
+export default QrScreen;
