@@ -41,24 +41,28 @@ const HomeScreen = () => {
   });
 
   const openModal = () => {
-    translateY.setValue(300);  // Начальное положение модалки
-    fadeAnim.setValue(0);  // Начальная прозрачность фона
+    console.log("modal")
+    translateY.setValue(300);
+    fadeAnim.setValue(0);
     setModalVisible(true);
-
-    Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        friction: 8,
-        tension: 70,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,  // Делаем фон полупрозрачным
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 70,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 50); // Даем 50ms, чтобы Modal успел стать видимым
   };
+  
 
   const closeModal = () => {
     Animated.parallel([
@@ -79,10 +83,16 @@ const HomeScreen = () => {
   };
 
   const purchases = [
-    { id: 1, shop: 'Магнит', time: 'Сегодня, 12:30', amount: '450₽' },
-    { id: 2, shop: 'Пятёрочка', time: 'Вчера, 18:00', amount: '320₽' },
-    { id: 3, shop: 'OZON', time: '12 апр, 10:15', amount: '1 200₽' },
+    { id: 1, shop: 'Магнит', time: 'Сегодня, 12:30', amount: '450₽', idShop: 1 },
+    { id: 2, shop: 'Пятёрочка', time: 'Вчера, 18:00', amount: '320₽', idShop: 2 },
+    { id: 3, shop: 'OZON', time: '12 апр, 10:15', amount: '1 200₽', idShop: 3 },
   ];
+
+  const shopIcons: { [key: number]: any } = {
+    1: require('../assets/icons/magnit.png'),
+    2: require('../assets/icons/pyatyorochka.png'),
+    3: require('../assets/icons/ozon.png'),
+  };
 
   const categories = ['Продукты', 'Одежда', 'Техника', 'Дом', 'Спорт'];
 
@@ -166,13 +176,13 @@ const HomeScreen = () => {
     <ScrollView style={styles.container}>
       {/* Header */}
       <LinearGradient
-        colors={['#2A2F4F', '#2A2F4F']}
+        colors={['#ff4e50', '#ff4e50']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.header}>
         <View style={styles.userInfo}>
           <Image source={require('../assets/icons/bogdan.jpg')} style={styles.logo} />
-          <Text style={styles.username}>Алексей</Text>
+          <Text style={styles.username}>Богдан</Text>
         </View>
         <View style={styles.qrBox}>
           <TouchableOpacity onPress={openModal}>
@@ -188,17 +198,21 @@ const HomeScreen = () => {
             <Text style={styles.sectionTitle}>Траты</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate('AllPurchases')}
-              // style={styles.moreButton}
+            // style={styles.moreButton}
             >
               <Text style={styles.moreButtonText}>Ещё</Text>
             </TouchableOpacity>
           </View>
 
           <View>
-            {purchases.map((item) => (
+            {purchases.map((item, index) => (
               <View key={item.id}>
                 <View style={styles.purchaseCard}>
-                  <Image source={require('../assets/icons/magnit.png')} style={styles.purchaseIcon} />
+                  {/* Используем idShop для загрузки иконки */}
+                  <Image
+                    source={shopIcons[item.idShop] || require('../assets/icons/default.png')}  // fallback на дефолтную иконку
+                    style={styles.purchaseIcon}
+                  />
                   <View style={styles.purchaseInfo}>
                     <Text style={styles.purchaseShop}>{item.shop}</Text>
                     <Text style={styles.purchaseTime}>{item.time}</Text>
@@ -206,11 +220,14 @@ const HomeScreen = () => {
                   <Text style={styles.purchaseAmount}>{item.amount}</Text>
                 </View>
 
-                {/* Линия под карточкой */}
-                <View style={styles.purchaseSeparator} />
+                {/* Убираем разделитель у последнего элемента */}
+                {index !== purchases.length - 1 && <View style={styles.purchaseSeparator} />}
               </View>
             ))}
           </View>
+
+
+
         </View>
 
         {/* Категории */}
@@ -274,86 +291,89 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#2A2F4F',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(242, 242, 242, 0.8)',
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: 'rgba(0, 0, 0, 0.08)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 3,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
   },
   content: {
-    paddingHorizontal: 16,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#F6F7F8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F6F7F8',
   },
   header: {
+    backgroundColor: '#000000',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    shadowColor: '#2A2F4F',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
     shadowRadius: 16,
-    elevation: 8,
-    overflow: 'hidden',
+    elevation: 6,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   username: {
-    marginLeft: 16,
-    fontSize: 24,
+    marginLeft: 12,
+    fontSize: 20,
     color: '#FFFFFF',
-    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
-    letterSpacing: 0.5,
+    fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
+    letterSpacing: 0.2,
   },
   qrBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: 12,
-    borderRadius: 16,
-    shadowColor: '#FFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 12,
+
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
   },
   sectionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   moreButtonText: {
-    color: '#2A2F4F',
-    fontSize: 16,
+    color: '#ff4e50',
+    fontSize: 15,
     fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
-    letterSpacing: 0.3,
   },
   sectionTitle: {
-    fontSize: 22,
-    color: '#2A2F4F',
+    fontSize: 20,
+    color: '#000000',
     fontFamily: FONT_FAMILY.Montserrat_BOLD,
-    letterSpacing: 0.5,
   },
   purchaseCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
   },
   purchaseIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 8,
+    // backgroundColor: '#FFDD2D20',
+    padding: 8,
   },
   purchaseInfo: {
     flex: 1,
@@ -361,24 +381,24 @@ const styles = StyleSheet.create({
   },
   purchaseShop: {
     fontSize: 16,
-    color: '#2A2F4F',
-    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
+    color: '#000000',
+    fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
   },
   purchaseTime: {
     fontSize: 13,
-    color: '#6C757D',
-    fontFamily: FONT_FAMILY.Montserrat_LIGHT,
+    color: '#797979',
+    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
+    marginTop: 4,
   },
   purchaseAmount: {
     fontSize: 16,
-    color: '#2A2F4F',
+    color: '#000000',
     fontFamily: FONT_FAMILY.Montserrat_BOLD,
   },
   purchaseSeparator: {
     height: 1,
-    backgroundColor: 'rgba(108, 117, 125, 0.1)',
-    marginVertical: 8,
-    marginHorizontal: 40
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    marginVertical: 4,
   },
   categoryScroll: {
     marginBottom: 16,
@@ -386,90 +406,82 @@ const styles = StyleSheet.create({
   },
   categoryBox: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    marginRight: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginRight: 12,
     borderWidth: 1,
-    borderColor: 'rgba(242, 242, 242, 0.8)',
-    shadowColor: '#2A2F4F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
   },
   icon: {
-    width: 32,
-    height: 32,
-    tintColor: '#FFFFFF',
+    width: 28,
+    height: 28,
+    tintColor: '#ff4e50',
   },
   logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: '#FFFFFF',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(42, 47, 79, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     padding: 24,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingBottom: 40,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 34,
   },
   dragBar: {
-    width: 64,
-    height: 5,
-    backgroundColor: '#E9ECEF',
-    borderRadius: 3,
+    width: 48,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 24,
   },
   title: {
-    fontSize: 24,
-    color: '#2A2F4F',
+    fontSize: 22,
+    color: '#000000',
     fontFamily: FONT_FAMILY.Montserrat_BOLD,
     marginBottom: 24,
     textAlign: 'center',
-    letterSpacing: 0.5,
   },
   image: {
-    width: 240,
-    height: 240,
+    width: 200,
+    height: 200,
     borderRadius: 16,
     alignSelf: 'center',
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#F1F3F5',
+    backgroundColor: '#F5F5F5',
   },
   noImageText: {
-    fontSize: 16,
-    color: '#ADB5BD',
+    fontSize: 15,
+    color: '#A0A0A0',
     fontFamily: FONT_FAMILY.Montserrat_REGULAR,
     marginBottom: 24,
     textAlign: 'center',
   },
   button: {
     marginTop: 12,
-    backgroundColor: '#2A2F4F',
+    backgroundColor: '#ff4e50',
     paddingVertical: 16,
-    borderRadius: 12,
-    shadowColor: '#2A2F4F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    borderRadius: 14,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#FFF',
     fontSize: 16,
-    fontFamily: FONT_FAMILY.Montserrat_REGULAR,
-    letterSpacing: 0.3,
+    fontFamily: FONT_FAMILY.Montserrat_MEDIUM,
+    textAlign: 'center',
   },
 });
 
