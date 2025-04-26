@@ -190,14 +190,19 @@ const HomeScreen = () => {
 
         <View>
           {purchases.map((item) => (
-            <View key={item.id} style={styles.purchaseCard}>
-               <Image source={require('../assets/icons/magnit.png')} style={styles.purchaseIcon} />
+            <View key={item.id}>
+            <View style={styles.purchaseCard}>
+              <Image source={require('../assets/icons/magnit.png')} style={styles.purchaseIcon} />
               <View style={styles.purchaseInfo}>
                 <Text style={styles.purchaseShop}>{item.shop}</Text>
                 <Text style={styles.purchaseTime}>{item.time}</Text>
               </View>
               <Text style={styles.purchaseAmount}>{item.amount}</Text>
             </View>
+      
+            {/* Линия под карточкой */}
+            <View style={styles.purchaseSeparator} />
+          </View>
           ))}
         </View>
       </View>
@@ -260,8 +265,16 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 30,
-  },
+    backgroundColor: '#fff',        // белый фон
+    borderRadius: 12,               // скругление углов
+    padding: 16,                    // внутренние отступы
+    marginBottom: 30,               // внешний отступ снизу
+    shadowColor: '#000',            // цвет тени
+    shadowOffset: { width: 0, height: 4 }, // сдвиг тени
+    shadowOpacity: 0.1,             // прозрачность тени
+    shadowRadius: 6,                // размытие тени
+    elevation: 6,                   // тень для Android
+  },  
   container: {
     flex: 1,
     backgroundColor: '#FFF',
@@ -315,15 +328,8 @@ const styles = StyleSheet.create({
   purchaseCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEFEFE',
     padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 6,
+    position: 'relative', // не обязательно, но вдруг пригодится
   },
   purchaseIcon: {
     width: 30,
@@ -347,6 +353,12 @@ const styles = StyleSheet.create({
     // fontWeight: 'bold',
     fontSize: 16,
     fontFamily: FONT_FAMILY.Montserrat_BOLD,
+  },
+  purchaseSeparator: {
+    height: 1,
+    backgroundColor: '#ccc',
+    marginTop: 8,
+    marginHorizontal: 35  // регулируешь отступы слева и справа
   },
   moreButton: {
     backgroundColor: '#ff4e50', // Цвет кнопки
