@@ -174,15 +174,9 @@ const HomeScreen = () => {
   const categories = [
     "Косметика и парфюмерия", "Одежда и аксессуары",
     "Электроника", "Ювелирные изделия",
-    "Продукты", "Аптеки",
-    "Интернет-магазины", "Такси и доставка",
-    "Обувь", "Детские товары",
-    "Кафе и рестораны", "Авто",
-    "Заправки", "Красота",
-    "Мебель и товары для дома", "Здоровье",
-    "Спорт", "Страхование", "Товары для ремонта",
-    "Товары для животных", "Путешествия ",
-    "Услуги", "Подарки и развлечения", "Образование", "Разное",
+    "Продукты",
+    "Обувь",
+    "Заправки", "Красота", "Образование", "Разное",
 ];
 
   const categoriesIcons: { [key: string]: any } = {
@@ -191,6 +185,9 @@ const HomeScreen = () => {
     'Одежда и аксессуары': require('../assets/categories/clothes.jpg'),
     'Косметика и парфюмерия': require('../assets/categories/cosmetics.jpg'),
     'Электроника': require('../assets/categories/electronics.jpg'),
+    'Ювелирные изделия': require('../assets/categories/jewelry.jpg'),
+    'Образование': require('../assets/categories/study.jpg'),
+    'Красота':  require('../assets/categories/jewelry.jpg'),
   };
 
   const actions = [
