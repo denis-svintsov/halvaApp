@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, TouchableWithoutFeedback, Image, Animated, PanResponder, StyleSheet, Easing } from 'react-native';
-// Типизация пропсов компонента PurchaseDetailsModal
+import { ScrollView } from 'react-native-gesture-handler';
+
 export interface Purchase {
-    id: number;
-    idShop: number;
-    amount: string;
-    time: string;
+    loadId: string;
+    shop: string;
+    total: number;
+    date: string;
+    category: string;
+    items: {
+        name: string;
+        price: number;
+        count: number;
+        total: number;
+    }[];
 }
 
 interface PurchaseDetailsModalProps {
@@ -14,69 +22,70 @@ interface PurchaseDetailsModalProps {
     selectedPurchase: Purchase | null;
 }
 
-const shopIcons: { [key: number]: { icon: any; name: string } } = {
-    1: { icon: require('../assets/icons/magnit.png'), name: 'Магнит' },
-    2: { icon: require('../assets/icons/pyatyorochka.png'), name: 'Пятёрочка' },
-    3: { icon: require('../assets/icons/ozon.png'), name: 'OZON' },
-  };
+const shopIcons: { [key: string]: any } = {
+    'Магнит': require('../assets/icons/magnit.png'),
+    'Пятерочка': require('../assets/icons/pyatyorochka.png'),
+    'OZON': require('../assets/icons/ozon.png'),
+};
 
 const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ purchaseModalVisible, setPurchaseModalVisible, selectedPurchase }) => {
-    const [fadeAnim] = useState(new Animated.Value(0)); // Анимация затемнения фона
-    const [translateY] = useState(new Animated.Value(300)); // Для анимации появления модального окна
-    const shop = selectedPurchase?.idShop !== undefined ? shopIcons[selectedPurchase.idShop] : null;
-
+    const [fadeAnim] = useState(new Animated.Value(0));
+    const [translateY] = useState(new Animated.Value(300));
+    const [scrollOffset, setScrollOffset] = useState(0);
 
     const openModal = () => {
-        console.log("Opening purchase modal...");
-        translateY.setValue(300); // Начальная позиция модалки
-        fadeAnim.setValue(0); // Фоновая анимация
+        translateY.setValue(300);
+        fadeAnim.setValue(0);
         setPurchaseModalVisible(true);
 
         setTimeout(() => {
             Animated.parallel([
                 Animated.spring(translateY, {
-                    toValue: 0, // Окончательная позиция модалки
+                    toValue: 0,
                     useNativeDriver: true,
                     friction: 8,
                     tension: 70,
                 }),
                 Animated.timing(fadeAnim, {
-                    toValue: 1, // Плавное появление фона
+                    toValue: 1,
                     duration: 300,
                     useNativeDriver: true,
                 }),
             ]).start();
-        }, 50); // Даем время, чтобы Modal стал видимым
+        }, 50);
     };
 
     useEffect(() => {
         if (purchaseModalVisible) {
-            openModal();  // Открытие модалки, если purchaseModalVisible == true
+            openModal();
         }
     }, [purchaseModalVisible]);
 
     const closeModal = () => {
         Animated.parallel([
             Animated.timing(translateY, {
-                toValue: 300, // Спускаем модалку вниз
+                toValue: 300,
                 duration: 300,
                 easing: Easing.in(Easing.ease),
                 useNativeDriver: true,
             }),
             Animated.timing(fadeAnim, {
-                toValue: 0, // Фон снова исчезает
+                toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
             }),
         ]).start(() => {
-            setPurchaseModalVisible(false); // Закрытие модального окна
+            setPurchaseModalVisible(false);
         });
     };
 
-    // Панель жестов для свайпа
     const panResponder = PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            if (scrollOffset <= 0 && gestureState.dy > 5) {
+                return true;
+            }
+            return false;
+        },
         onPanResponderMove: (_, gestureState) => {
             if (gestureState.dy > 0) {
                 translateY.setValue(gestureState.dy);
@@ -84,54 +93,85 @@ const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ purchaseMod
         },
         onPanResponderRelease: (_, gestureState) => {
             if (gestureState.dy > 150) {
-                closeModal(); // Если смахнули достаточно сильно — закрыть
+                closeModal();
             } else {
                 Animated.spring(translateY, {
                     toValue: 0,
                     useNativeDriver: true,
-                }).start(); // Если не смахнули, вернуть модалку обратно
+                }).start();
             }
         },
     });
 
+    const handleScroll = (event: any) => {
+        setScrollOffset(event.nativeEvent.contentOffset.y);
+    };
+
     const formatDate = (isoString: string) => {
         const date = new Date(isoString);
-        const now = new Date();
-    
-        const months = [
-          'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-          'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-        ];
-    
-        const day = date.getDate();
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
-    
-        return `${day} ${month} ${year} в ${hours}:${minutes}`;
-      };
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        
+        return `${day}.${month}.${year} ${hours}:${minutes}`;
+    };
+
+    const matchedIconKey = Object.keys(shopIcons).find(key => selectedPurchase?.shop.includes(key));
+    const iconSource = matchedIconKey ? shopIcons[matchedIconKey] : require('../assets/icons/LENTA.png');
 
     return (
         <Modal transparent={true} visible={purchaseModalVisible} onRequestClose={closeModal}>
             <View style={styles.modalOverlay}>
-                {/* Фон с затемнением */}
                 <TouchableWithoutFeedback onPress={closeModal}>
                     <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.5)', opacity: fadeAnim }]} />
                 </TouchableWithoutFeedback>
 
-                {/* Модальное окно со свайпом вниз */}
                 <Animated.View
                     {...panResponder.panHandlers}
-                    style={[styles.modalContent, { transform: [{ translateY }] }]}>
-                    <View style={styles.dragBar}></View>
-                    <Text style={styles.title}>Детали покупки</Text>
+                    style={[styles.modalContentWrapper, { transform: [{ translateY }] }]}>
 
-                    {/* Отображаем информацию о покупке */}
-                    <Text style={styles.purchaseDetails}>Магазин: {shop?.name || 'Неизвестно'}</Text>
-                    <Text style={styles.purchaseDetails}>Сумма: {selectedPurchase?.amount}₽</Text>
-                    <Text style={styles.purchaseDetails}>Дата: {formatDate(selectedPurchase?.time || "Дата не указана")
-                    }</Text>
+                    <View style={styles.dragBar} />
+
+                    <ScrollView
+                        style={styles.modalContent}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        scrollEventThrottle={16}
+                        onScroll={handleScroll}
+                    >
+                        {/* Шапка чека */}
+                        <View style={styles.receiptHeader}>
+                            <Image
+                                source={iconSource}
+                                style={styles.shopIcon}
+                            />
+                            <Text style={styles.shopName}>{selectedPurchase?.shop || 'Магазин'}</Text>
+                            <Text style={styles.receiptDate}>{formatDate(selectedPurchase?.date || new Date().toISOString())}</Text>
+                        </View>
+
+                        {/* Список товаров */}
+                        <View style={styles.itemsList}>
+                            {selectedPurchase?.items.map((item, index) => (
+                                <View key={index} style={styles.itemRow}>
+                                    <View style={styles.itemNameWrapper}>
+                                        <Text style={styles.itemName}>{item.name}</Text>
+                                        <Text style={styles.itemPrice}>{item.price}₽ × {item.count}</Text>
+                                    </View>
+                                    <Text style={styles.itemTotal}>{item.total}₽</Text>
+                                </View>
+                            ))}
+                        </View>
+
+                        {/* Итоговая сумма */}
+                        <View style={styles.totalSection}>
+                            <View style={styles.totalRow}>
+                                <Text style={styles.totalLabel}>ИТОГО</Text>
+                                <Text style={styles.totalAmount}>{selectedPurchase?.total}₽</Text>
+                            </View>
+                        </View>
+                    </ScrollView>
                 </Animated.View>
             </View>
         </Modal>
@@ -143,43 +183,98 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'flex-end',
     },
-    modalContent: {
-        backgroundColor: '#FFFFFF',
-        padding: 24,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingBottom: 34,
+    modalContentWrapper: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+        maxHeight: '90%',
+        width: '100%',
+    },
+    scrollContent: {
+        paddingBottom: 40,
     },
     dragBar: {
-        width: 50,
-        height: 5,
-        backgroundColor: '#D3D3D3',
-        borderRadius: 2.5,
+        width: 40,
+        height: 4,
+        backgroundColor: '#ccc',
+        borderRadius: 2,
         alignSelf: 'center',
-        marginBottom: 20,
+        marginVertical: 8,
     },
-    title: {
-        fontSize: 20,
+    modalContent: {
+        paddingHorizontal: 16,
+    },
+    receiptHeader: {
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    shopIcon: {
+        width: 48,
+        height: 48,
+        marginBottom: 8,
+        resizeMode: 'contain',
+    },
+    shopName: {
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#000',
-        marginBottom: 20,
+        marginBottom: 4,
     },
-    purchaseDetails: {
+    receiptDate: {
+        fontSize: 14,
+        color: '#666',
+    },
+    itemsList: {
+        marginVertical: 16,
+    },
+    itemRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    itemNameWrapper: {
+        flex: 1,
+        marginRight: 8,
+    },
+    itemName: {
         fontSize: 16,
-        color: '#333',
-        marginBottom: 10,
     },
-    button: {
-        backgroundColor: '#007BFF',
+    itemPrice: {
+        fontSize: 14,
+        color: '#666',
+    },
+    itemTotal: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    totalSection: {
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
         paddingVertical: 12,
-        marginVertical: 10,
-        borderRadius: 5,
+        marginBottom: 16,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    totalLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    totalAmount: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    receiptFooter: {
         alignItems: 'center',
     },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+    footerText: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 4,
     },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal,
   Platform, PermissionsAndroid, Alert, Animated, Easing, TouchableWithoutFeedback, PanResponder
@@ -11,12 +11,50 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 import PurchaseDetailsModal, { Purchase } from '../components/PurchaseDetailModal';
 
+const fallbackPurchases: Purchase[] = [
+  {
+    loadId: '1',
+    date: '2025-04-26T18:01',
+    total: 450,
+    shop: 'Магнит',
+    category: 'Продукты',
+    items: [
+      { name: 'Хлеб', price: 40, count: 2, total: 80 },
+      { name: 'Молоко', price: 60, count: 3, total: 180 },
+    ],
+  },
+  {
+    loadId: '2',
+    date: '2025-04-26T18:01',
+    total: 320,
+    shop: 'Пятёрочка',
+    category: 'Продукты',
+    items: [
+      { name: 'Яйца', price: 100, count: 2, total: 200 },
+      { name: 'Молоко', price: 60, count: 2, total: 120 },
+    ],
+  },
+  {
+    loadId: '3',
+    date: '2025-04-26T18:01',
+    total: 1200,
+    shop: 'OZON',
+    category: 'Электроника',
+    items: [
+      { name: 'Телевизор', price: 500, count: 1, total: 500 },
+      { name: 'Наушники', price: 150, count: 4, total: 600 },
+    ],
+  },
+];
+
 const AllPurchases = () => {
   const navigation = useNavigation<any>();
 
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false); // Видимость модалки
-
 
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -117,35 +155,36 @@ const AllPurchases = () => {
     });
   };
 
-  const purchases = [
-    { id: 1, time: '2025-04-26T18:01', amount: '450', idShop: 1 },
-    { id: 2, time: '2025-04-26T18:01', amount: '320', idShop: 2 },
-    { id: 3, time: '2025-04-26T18:01', amount: '1 200', idShop: 3 },
-    { id: 4, time: '2025-04-26T18:01', amount: '450', idShop: 1 },
-    { id: 5, time: '2025-04-26T18:01', amount: '320', idShop: 2 },
-    { id: 6, time: '2025-04-26T18:01', amount: '1 200', idShop: 3 },
-    { id: 7, time: '2025-04-26T18:01', amount: '450', idShop: 1 },
-    { id: 8, time: '2025-04-26T18:01', amount: '320', idShop: 2 },
-    { id: 9, time: '2025-04-26T18:01', amount: '1 200', idShop: 3 },
-    { id: 10, time: '2025-03-26T18:01', amount: '450', idShop: 1 },
-    { id: 11, time: '2025-03-26T18:01', amount: '320', idShop: 2 },
-    { id: 12, time: '2024-03-26T18:01', amount: '1 200', idShop: 3 },
-  ];
+  useEffect(() => {
+    const fetchPurchases = async () => {
+      try {
+        const response = await axios.get<Purchase[]>('http://109.195.28.204/api/getAll');
+        setPurchases(response.data);
+      } catch (error) {
+        console.error('Ошибка при загрузке покупок, подставляем тестовые данные', error);
+        setPurchases(fallbackPurchases);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const shopIcons: { [key: number]: { icon: any; name: string } } = {
-    1: { icon: require('../assets/icons/magnit.png'), name: 'Магнит' },
-    2: { icon: require('../assets/icons/pyatyorochka.png'), name: 'Пятёрочка' },
-    3: { icon: require('../assets/icons/ozon.png'), name: 'OZON' },
+    fetchPurchases();
+  }, []);
+
+  const shopIcons: { [key: string]: any } = {
+    'Магнит': require('../assets/icons/magnit.png'),
+    'Пятерочка': require('../assets/icons/pyatyorochka.png'),
+    'OZON': require('../assets/icons/ozon.png'),
   };
 
   // отфильтрованные покупки
   const filteredPurchases = purchases.filter((item) => {
-    const matchesShop = selectedShop ? item.idShop === Number(selectedShop) : true;
+    const matchesShop = selectedShop ? item.shop === selectedShop : true;
 
     const matchesTime = (() => {
       if (selectedTimeFilter === 'all') return true;
 
-      const itemDate = new Date(item.time);
+      const itemDate = new Date(item.date);
       const now = new Date();
 
       if (selectedTimeFilter === 'month') {
@@ -173,7 +212,7 @@ const AllPurchases = () => {
     ];
 
     filteredPurchases.forEach((purchase) => {  // <--- ИСПОЛЬЗУЕМ ОТФИЛЬТРОВАННЫЕ
-      const date = new Date(purchase.time);
+      const date = new Date(purchase.date);
       const year = date.getFullYear();
       const monthIndex = date.getMonth();
       const monthName = months[monthIndex];
@@ -191,8 +230,8 @@ const AllPurchases = () => {
     });
 
     return Object.values(groups).sort((a, b) => {
-      const aDate = new Date(a.data[0].time);
-      const bDate = new Date(b.data[0].time);
+      const aDate = new Date(a.data[0].date);
+      const bDate = new Date(b.data[0].date);
       return bDate.getTime() - aDate.getTime();
     });
   }, [filteredPurchases]); // <--- Теперь зависимость от отфильтрованных покупок
@@ -300,12 +339,15 @@ const AllPurchases = () => {
         <View style={styles.filters}>
           <Picker
             selectedValue={selectedShop}
-            onValueChange={(value) => setSelectedShop(value)}
+            onValueChange={(itemValue) => setSelectedShop(itemValue)}
           >
             <Picker.Item label="Все магазины" value={null} />
-            {Object.keys(shopIcons).map((id) => (
-              <Picker.Item key={id} label={shopIcons[Number(id)].name
-              } value={id} />
+            {Object.keys(shopIcons).map((shopName) => (
+              <Picker.Item
+                key={shopName}
+                label={shopName}
+                value={shopName}
+              />
             ))}
           </Picker>
 
@@ -324,7 +366,7 @@ const AllPurchases = () => {
           // Считаем сумму трат в этой группе
           const totalAmount = group.data.reduce((sum, item) => {
             // убираем пробелы в числах типа '1 200', приводим к числу
-            const amount = parseFloat(item.amount.replace(/\s/g, ''));
+            const amount = item.total;
             return sum + amount;
           }, 0);
 
@@ -337,11 +379,12 @@ const AllPurchases = () => {
                 </View>
 
                 {group.data.map((item, index) => {
-                  const shop = shopIcons[item.idShop];
+                  const matchedIconKey = Object.keys(shopIcons).find(key => item.shop.includes(key));
+                  const iconSource = matchedIconKey ? shopIcons[matchedIconKey] : require('../assets/icons/LENTA.png');
 
                   return (
                     <TouchableOpacity
-                      key={item.id}
+                      key={index}
                       onPress={() => {
                         setSelectedPurchase(item); // Сохраняем выбранную покупку
                         setPurchaseModalVisible(true); // Открываем модалку
@@ -349,14 +392,14 @@ const AllPurchases = () => {
                     >
                       <View style={styles.purchaseCard}>
                         <Image
-                          source={shop?.icon || require('../assets/icons/default.png')}
+                          source={iconSource}
                           style={styles.purchaseIcon}
                         />
                         <View style={styles.purchaseInfo}>
-                          <Text style={styles.purchaseShop}>{shop?.name || 'Неизвестно'}</Text>
-                          <Text style={styles.purchaseTime}>{formatDate(item.time)}</Text>
+                          <Text style={styles.purchaseShop}>{item.shop || 'Неизвестно'}</Text>
+                          <Text style={styles.purchaseTime}>{formatDate(item.date)}</Text>
                         </View>
-                        <Text style={styles.purchaseAmount}>{item.amount}₽</Text>
+                        <Text style={styles.purchaseAmount}>{item.total}₽</Text>
                       </View>
 
                       {index !== group.data.length - 1 && <View style={styles.purchaseSeparator} />}
@@ -508,7 +551,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONT_FAMILY.Montserrat_BOLD,
     color: '#333',
-    marginBottom: 12,
+    marginRight: 5,
   },
   purchaseCard: {
     flexDirection: 'row',
@@ -522,6 +565,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     // backgroundColor: '#FFDD2D20',
     padding: 8,
+    resizeMode: 'contain',
   },
   purchaseInfo: {
     flex: 1,

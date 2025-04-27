@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal,
   Platform, PermissionsAndroid, Alert, Animated, Easing, TouchableWithoutFeedback, PanResponder
@@ -10,8 +10,47 @@ import { FONT_FAMILY } from '../../customFont';
 import LinearGradient from 'react-native-linear-gradient';
 import PurchaseDetailsModal, { Purchase } from '../components/PurchaseDetailModal';
 
+const fallbackPurchases: Purchase[] = [
+  {
+    loadId: '1',
+    date: '2025-04-26T18:01',
+    total: 450,
+    shop: 'Магнит',
+    category: 'Продукты',
+    items: [
+      { name: 'Хлеб', price: 40, count: 2, total: 80 },
+      { name: 'Молоко', price: 60, count: 3, total: 180 },
+    ],
+  },
+  {
+    loadId: '2',
+    date: '2025-04-26T18:01',
+    total: 320,
+    shop: 'Пятёрочка',
+    category: 'Продукты',
+    items: [
+      { name: 'Яйца', price: 100, count: 2, total: 200 },
+      { name: 'Молоко', price: 60, count: 2, total: 120 },
+    ],
+  },
+  {
+    loadId: '3',
+    date: '2025-04-26T18:01',
+    total: 1200,
+    shop: 'OZON',
+    category: 'Электроника',
+    items: [
+      { name: 'Телевизор', price: 500, count: 1, total: 500 },
+      { name: 'Наушники', price: 150, count: 4, total: 600 },
+    ],
+  },
+];
+
 const HomeScreen = () => {
   const navigation = useNavigation<any>();
+
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
@@ -110,24 +149,56 @@ const HomeScreen = () => {
     });
   };
 
-  const purchases = [
-    { id: 1, time: '2025-04-26T18:01', amount: '450', idShop: 1 },
-    { id: 2, time: '2025-04-26T18:01', amount: '320', idShop: 2 },
-    { id: 3, time: '2025-04-26T18:01', amount: '1 200', idShop: 3 },
-  ];
+  useEffect(() => {
+    const fetchPurchases = async () => {
+      try {
+        const response = await axios.get<Purchase[]>('http://109.195.28.204/api/getFirst3');
+        setPurchases(response.data);
+      } catch (error) {
+        console.error('Ошибка при загрузке покупок, подставляем тестовые данные', error);
+        setPurchases(fallbackPurchases);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const shopIcons: { [key: number]: { icon: any; name: string } } = {
-    1: { icon: require('../assets/icons/magnit.png'), name: 'Магнит' },
-    2: { icon: require('../assets/icons/pyatyorochka.png'), name: 'Пятёрочка' },
-    3: { icon: require('../assets/icons/ozon.png'), name: 'OZON' },
+    fetchPurchases();
+  }, []);
+
+  const shopIcons: { [key: string]: any } = {
+    'Магнит': require('../assets/icons/magnit.png'),
+    'Пятерочка': require('../assets/icons/pyatyorochka.png'),
+    'OZON': require('../assets/icons/ozon.png'),
   };
 
-  const categories = ['Продукты', 'Одежда', 'Техника', 'Дом', 'Спорт'];
+  const categories = [
+    "Косметика и парфюмерия", "Одежда и аксессуары",
+    "Электроника", "Ювелирные изделия",
+    "Продукты", "Аптеки",
+    "Интернет-магазины", "Такси и доставка",
+    "Обувь", "Детские товары",
+    "Кафе и рестораны", "Авто",
+    "Заправки", "Красота",
+    "Мебель и товары для дома", "Здоровье",
+    "Спорт", "Страхование", "Товары для ремонта",
+    "Товары для животных", "Путешествия ",
+    "Услуги", "Подарки и развлечения", "Образование", "Разное",
+];
 
   const categoriesIcons: { [key: string]: any } = {
-    'Продукты': require('../assets/categories/products.png'),
-    'Одежда': require('../assets/categories/clothes.png'),
+    'Продукты': require('../assets/categories/products.jpg'),
+    'Обувь': require('../assets/categories/clothes.jpg'),
+    'Одежда и аксессуары': require('../assets/categories/clothes.jpg'),
+    'Косметика и парфюмерия': require('../assets/categories/cosmetics.jpg'),
+    'Электроника': require('../assets/categories/electronics.jpg'),
   };
+
+  const actions = [
+    { image: require('../assets/actions/common/1.jpeg'), title: 'Продукты', text: '50%' },
+    { image: require('../assets/actions/common/1.jpeg'), title: 'Одежда', text: '30%' },
+    { image: require('../assets/actions/common/1.jpeg'), title: 'Техника', text: '15%' },
+    { image: require('../assets/actions/common/1.jpeg'), title: 'Дом', text: '40%' },
+  ];
 
   const selectImage = () => {
     launchImageLibrary({ mediaType: 'photo', includeBase64: false }, (response) => {
@@ -197,13 +268,17 @@ const HomeScreen = () => {
       Alert.alert('Успех', 'Изображение успешно отправлено!', [{ text: 'OK', onPress: () => closeModal() }]);
     } catch (error) {
       console.log('Ошибка при отправке:', error);
-      Alert.alert('Ошибка', 'Не удалось отправить изображение. Попробуйте снова.');
+      Alert.alert('Ошибка', 'Не удалось отправить изображение. Попробуйте снова.' + error);
     }
   };
 
   const handleCloseBackground = () => {
     closeModal();
   };
+
+  if (loading) {
+    return <Text>Загрузка...</Text>;
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -241,11 +316,12 @@ const HomeScreen = () => {
 
           <View>
             {purchases.map((item, index) => {
-              const shop = shopIcons[item.idShop];
+               const matchedIconKey = Object.keys(shopIcons).find(key => item.shop.includes(key));
+               const iconSource = matchedIconKey ? shopIcons[matchedIconKey] : require('../assets/icons/LENTA.png');
 
               return (
                 <TouchableOpacity
-                  key={item.id}
+                  key={index}
                   onPress={() => {
                     setSelectedPurchase(item); // Сохраняем выбранную покупку
                     setPurchaseModalVisible(true); // Открываем модалку
@@ -253,14 +329,15 @@ const HomeScreen = () => {
                 >
                   <View style={styles.purchaseCard}>
                     <Image
-                      source={shop?.icon || require('../assets/icons/default.png')}
+                      source={iconSource}
                       style={styles.purchaseIcon}
                     />
+
                     <View style={styles.purchaseInfo}>
-                      <Text style={styles.purchaseShop}>{shop?.name || 'Неизвестно'}</Text>
-                      <Text style={styles.purchaseTime}>{formatDate(item.time)}</Text>
+                      <Text style={styles.purchaseShop}>{item?.shop || 'Неизвестно'}</Text>
+                      <Text style={styles.purchaseTime}>{formatDate(item.date)}</Text>
                     </View>
-                    <Text style={styles.purchaseAmount}>{item.amount}₽</Text>
+                    <Text style={styles.purchaseAmount}>{item.total}₽</Text>
                   </View>
 
                   {index !== purchases.length - 1 && <View style={styles.purchaseSeparator} />}
@@ -300,19 +377,17 @@ const HomeScreen = () => {
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Акции</Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-            {categories.map((cat, idx) => (
-              <View key={idx} style={styles.categoryBox}>
-                <View style={{ position: 'relative' }}>
-                  <Image
-                    source={categoriesIcons[cat] || require('../assets/categories/default.png')}  // fallback на дефолтную иконку
-                    style={styles.categoriesIcon}
-                  />
-                  <Text style={styles.categoriesTextOverlay}>{cat}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+          {actions.map((cat, idx) => (
+            <LinearGradient
+              colors={['#e1faff', '#e9e5fe']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              key={idx}
+              style={styles.actionBox}>
+              <Text style={styles.actionTitle}>{cat.title}</Text>
+              <Text style={styles.actionText}>{cat.text}</Text>
+            </LinearGradient>
+          ))}
 
         </View>
       </View>
@@ -453,6 +528,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     // backgroundColor: '#FFDD2D20',
     padding: 8,
+    resizeMode: 'contain',
   },
   purchaseInfo: {
     flex: 1,
@@ -512,6 +588,27 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontSize: 16,
     fontFamily: FONT_FAMILY.PODKOVA_REGULAR,
+  },
+  actionBox: {
+    height: 150,
+    marginBottom: 10,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    flexDirection: 'column',  // Элементы будут располагаться вертикально
+    justifyContent: 'flex-start',  // Выровнять содержимое сверху
+  },
+  actionTitle: {
+    fontSize: 22,
+    color: '#000000',
+    fontFamily: FONT_FAMILY.Montserrat_BOLD,
+  },
+  actionText: {
+    fontSize: 22,
+    color: '#000000',
+    fontFamily: FONT_FAMILY.Montserrat_LIGHT,
+    marginTop: 'auto', // Это оттолкнет текст вниз
+    alignSelf: 'flex-end',
   },
   icon: {
     width: 28,
