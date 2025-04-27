@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal,
+  ActivityIndicator, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal,
   Platform, PermissionsAndroid, Alert, Animated, Easing, TouchableWithoutFeedback, PanResponder
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -312,6 +312,16 @@ const AllPurchases = () => {
   const handleCloseBackground = () => {
     closeModal();
   };
+
+  if (loading) {
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator
+        size="large"
+        color="#0000ff"
+        animating={true}
+      />
+    </View>;
+  }
 
   return (
     <ScrollView style={styles.container}>

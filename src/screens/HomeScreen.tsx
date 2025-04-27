@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal,
+  ActivityIndicator, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal,
   Platform, PermissionsAndroid, Alert, Animated, Easing, TouchableWithoutFeedback, PanResponder
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -175,8 +175,7 @@ const HomeScreen = () => {
     "Косметика и парфюмерия", "Одежда и аксессуары",
     "Электроника", "Ювелирные изделия",
     "Продукты",
-    "Обувь",
-    "Заправки", "Красота", "Образование", "Разное",
+    "Обувь","Красота", "Образование",
 ];
 
   const categoriesIcons: { [key: string]: any } = {
@@ -274,7 +273,13 @@ const HomeScreen = () => {
   };
 
   if (loading) {
-    return <Text>Загрузка...</Text>;
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <ActivityIndicator 
+      size="large" 
+      color="#0000ff" 
+      animating={true}
+    />
+  </View>;
   }
 
   return (
