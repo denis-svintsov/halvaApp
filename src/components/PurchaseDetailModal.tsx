@@ -149,6 +149,7 @@ const PurchaseDetailsModal: React.FC<PurchaseDetailsModalProps> = ({ purchaseMod
                             />
                             <Text style={styles.shopName}>{selectedPurchase?.shop || 'Магазин'}</Text>
                             <Text style={styles.receiptDate}>{formatDate(selectedPurchase?.date || new Date().toISOString())}</Text>
+                            <Text style={styles.receiptDate}>Категория: {selectedPurchase?.category}</Text>
                         </View>
 
                         {/* Список товаров */}
